@@ -1,0 +1,13 @@
+* 문자함수
+- LOWER() -> 소문자 변환
+-> select 'Database', LOWER('DataBse') FROM dual;
+
+- UPPER() -> 대문자 변환
+- SUBSTR() -> 부분 문자열 추출
+- select substr('abcdef',2,3) from dual; (문자열, 인덱스(1부터), 문자개수) bcd
+- select substr('abcdef', 3) from dual; (문자열, 문자개수)  cdef
+
+퀴즈 scott>emp 테이블 job컬럼 문자열중 
+1. 1개에서 2개 -> select substr(job,1, 2) from emp;
+2. 5개이후 -> select substr(job, 5) from emp;
+3. 뒤에서 3개 -> select substr(job, -3) from emp;

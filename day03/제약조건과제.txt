@@ -1,0 +1,37 @@
+1. 회원 정보를 저장하는 테이블을 MEMBER란 이름으로 생성한다.
+
+
+컬럼명        자료형             크기    유일키   NULL허용      키  비고
+ID            VARCHAR2           20        Y         N          PK  회원ID
+NAME          VARCHAR2           20        N         N              이름
+REGNO         VARCHAR2           13        Y         N              주민번호
+HP            VARCHAR2           13        Y         Y              핸드폰번호
+ADDRESS       VARCHAR2           100       N         Y              주소
+
+
+
+
+2.도서정보를 저장하는 테이블 BOOK이라는 이름을 생성한다.
+
+
+컬럼명            자료형        크기    유일키    NULL허용    키  비고
+CODE           NUMBER            4        Y         N          PK  제품코드
+TITLE          VARCHAR2          50       N         N              도서명
+COUNT          NUMBER            6        N         Y              수량
+PRICE          NUMBER            10       N         Y              정가
+PUBLISH        VARCHAR2          50       N         Y              출판사
+  
+
+
+3. 회원이 책을 주문하였을 때 이에 대한 정보를 저장하는 테이블
+이름은 ORDER2로한다.
+
+
+컬럼명       자료형     크기    유일키   NULL허용    키  비고
+NO          VARCHAR2    10       Y         N         PK  주문번호
+ID          VARCHAR2    20       N         N         FK  회원ID
+CODE        NUMBER       4       N         N         FK  제품번호
+COUNT       NUMBER       6       N         Y             주문건수
+DR_DATE     DATE                 N         Y             주문일자
+
+
