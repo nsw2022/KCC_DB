@@ -17,3 +17,4 @@ NOCYCLE;
 select * from board;
 
 drop table board;
+
