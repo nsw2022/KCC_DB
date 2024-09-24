@@ -9,13 +9,15 @@
 --);
 
 
-CREATE TABLE tbl_board (
+CREATE TABLE board (
     board_seq NUMBER PRIMARY KEY,
     title VARCHAR2(255),
     content CLOB,
     author VARCHAR2(100),
-    created_date DATE DEFAULT SYSDATE
+    created_date DATE DEFAULT SYSDATE,
+    update_date DATE
 );
+
 
 DROP TABLE tbl_borad;
 
