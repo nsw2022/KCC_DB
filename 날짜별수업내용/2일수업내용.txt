@@ -1,0 +1,162 @@
+** 2일차 수업 **
+
+* 문자함수
+ - LOWER() -> 소문자 변환
+ -> SELECT 'DataBase', LOWER('DataBase') FROM dual;  
+
+ - UPPER() -> 대문자 변환
+ - SUBSTR() -> 부분 문자열 추출
+ - SELECT SUBSTR('abcdef', 2, 3) FROM dual; (문자열, 인덱스(1부터), 문자갯수)
+ - SELECT SUBSTR('abcdef', 3) FROM dual;
+
+ 퀴즈 scott>emp테이블 job컬럼 문자열 중 첫번째~두번째문자, 5번째 문자 이후 문자 출력
+  -> SELECT job, SUBSTR(job, 1, 2), SUBSTR(job, 5), SUBSTR(job, -3) FROM emp;
+
+ - LENGTH() -> 문자열 길이
+ 퀴즈 kcc> course 테이블에서 과목명(cname) 마지막 글자를 제외하고 출력하자.
+ -> SELECT cname, SUBSTR(cname, 1, LENGTH(cname) - 1) FROM course;
+
+ -LPAD(), RPAD()
+ -> SELECT 'Oracle', LPAD('Oracle', 10, '#') FROM dual;
+
+* 숫자함수
+ - MOD() -> 나머지값 리턴
+ -> SELECT MOD(10, 3) FROM dual;
+
+ - ROUND() -> 반올림값 리턴
+ -> SELECT ROUND(4323.4323, 2) FROM dual;
+
+ * 날짜 함수
+ - SYSDATE => 현재날짜를 리턴하는 함수
+ -> SELECT SYSDATE -1 "어제", SYSDATE "오늘", SYSDATE + 1 "내일" FROM dual;
+
+ 퀴즈 hr> 사원의 근속년을 출력하라. 예)10.5년 employees : hire_date
+ -> SELECT last_name, ROUND((SYSDATE - hire_date)/365, 1) || '년' FROM employees;
+
+ - ADD_MONTHS(날짜데이터, 추가할 개월 수)
+ - NEXT_DAY(날짜데이터, 요일문자)
+ -> SELECT SYSDATE, NEXT_DAY(SYSDATE, '토요일') FROM dual;
+
+ * 변환함수
+ - TO_CHAR() : 숫자, 날짜 => 문자열 변환
+ -> SELECT TO_CHAR(SYSDATE, 'YYYY-MM-DD'),
+	TO_CHAR(5000000, '$999,999,999') FROM dual;
+
+ - TO_DATE() : 문자열 => 날짜 데이터 변환
+ -> SELECT TO_DATE('2024-06-20', 'YYYY/MM/DD'),
+	TO_DATE('20240622', 'YYYY-MM-DD') FROM dual;
+
+퀴즈 hr> 2007년도에 입사한 사원의 목록을 출력하라. TO_CHAR() 사용
+  -> SELECT * FROM employees
+        WHERE TO_CHAR(hire_date, 'YYYY') = '2007';
+ 
+ - NVL() : NULL을 0 또는 기타 디폴트값을 변환
+ -> SELECT employee_id, salary , NVL(commission_pct, 0) FROM employees;
+ - NVL2(데이터, exper1, exper2) : 데이터가 NULL이면 exper2, NULL 아니면 exper1
+ -> SELECT employee_id, salary, NVL2(commission_pct, 'O', 'X') FROM employees;
+
+ - DECODE 함수
+ -> SELECT job_id, DECODE(job_id, 'SA_MAN', 'Sales Dept',
+		'SH_CLERK', 'Sales Dept', 'Another') FROM employees;
+
+ - CASE WHEN
+ -> SELECT job_id,
+	CASE job_id
+	   WHEN 'SA_MAN' THEN 'Sales Dept'
+	   WHEN 'SH_CLERK' THEN 'Sales Dept'
+	   ELSE 'Another2'
+	   END "CASE"
+     FROM employees;
+
+ ** DDL(정의어) : CREATE, ALTER, DROP
+
+ - 테이블 생성
+ CREATE TABLE 테이블명(
+  컬럼명1 데이터형,
+  컬럼명2 데이터형
+ )
+
+ * 데이터형(자료형)
+ - 문자형 : CHAR(size), VARCHAR2(size)
+ - 숫자형 : NUMBER
+ - 날짜형 : DATE, TIMESTAMP
+ - 대용량 : LOB, BLOB
+
+ * 테이블 복사(구조 + 데이터)
+ CREATE TABLE emp01
+   AS SELECT * FROM employees;
+
+ * 테이블 복사(구조)
+ CREATE TABLE emp02
+   AS SELECT * FROM employees WHERE 1=0;
+
+ *테이블 구조 수정
+ - 컬럼추가
+ ALTER TABLE emp02
+   ADD(job VARCHAR(50));
+
+ - 컬럼수정
+ ALTER TABLE emp02
+   MODIFY(job VARCHAR2(100));
+
+ - 컬럼삭제
+ ALTER TABLE emp02
+   DROP COLUMN job;
+
+ -데이터 삭제
+ -> DELETE FROM emp01; => DML (트랜잭션 O)
+ -> TRUNCATE TABLE emp01; => DDL (트랜잭션 X)
+
+ - 테이블 삭제
+ -> DROP TABLE emp01;
+
+ * DML : 데이터 추가, 수정, 삭제 => 트랜잭션 대상
+
+  CREATE TABLE dept01
+    AS SELECT * FROM departments;
+ 
+ -> INSERT(데이터 추가)
+ -> INSERT INTO dept01 VALUES(300, 'Developer', 100, 10)
+ -> INSERT INTO dept01 (department_id, department_name)
+	VALUES(400, 'Sales');
+
+ - UPDATE(데이터 수정)
+ -> UPDATE 테이블 SET 컬럼명1=수정값, 컬럼명2=수정값 WHERE 수정대상
+ -> UPDATE dept01 SET department_name = 'IT Service'
+ 	WHERE department_id = 300;
+
+퀴즈 hr> employees 테이블을 복사해서 emp01 테이블을 생성 후
+             salary가 3000 이상 대상자에게 salary를 10% 인상하자.
+
+ CREATE TABLE emp01
+   AS SELECT * FROM employees;
+
+ UPDATE emp01 SET salary = salary * 1.1
+   WHERE salary >= 3000
+
+ DELETE(데이터 삭제)
+ - DELETE FROM 테이블명 WHERE 삭제 대상
+
+ 퀴즈 hr> dept01 테이블에서 부서이름 'IT Service' 값을 가진 로우 삭제
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

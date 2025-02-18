@@ -1,0 +1,388 @@
+** 3일 수업 **
+
+* 제약조건
+  - 데이터 추가, 수정, 삭제 : DB 무결성 유지(보장)
+  - 데이터베이스 구축, 모델링 필수
+
+ CREATE TABLE emp01(
+   empno NUMBER,
+   ename VARCHAR2(20),
+   job VARCHAR2(20),
+  deptno NUMBER
+ )
+
+ INSERT INTO emp01 VALUES(null, null, 'IT', 30);
+
+ CREATE TABLE emp02(
+   empno NUMBER NOT NULL,
+   ename VARCHAR2(20) NOT NULL,
+   job VARCHAR2(20),
+  deptno NUMBER
+ )
+
+  INSERT INTO emp02 VALUES(null, null, 'IT', 30);
+
+  INSERT INTO emp02 VALUES(100, 'kim', 'IT', 30);
+  INSERT INTO emp02 VALUES(100, 'park', 'IT', 30);
+
+  CREATE TABLE emp03(
+   empno NUMBER UNIQUE,
+   ename VARCHAR2(20) NOT NULL,
+   job VARCHAR2(20),
+  deptno NUMBER
+ )
+
+ INSERT INTO emp03 VALUES(100, 'kim', 'IT', 30);
+ INSERT INTO emp03 VALUES(100, 'park', 'IT', 30);
+
+ * PRIMARY KEY(기본키, 식별자)
+   => UNIQUE + NOT NULL
+
+ CREATE TABLE emp04(
+   empno NUMBER PRIMARY KEY,
+   ename VARCHAR2(20) NOT NULL,
+   job VARCHAR2(20),
+  deptno NUMBER
+ )
+
+  INSERT INTO emp04 VALUES(200, 'kim', 'IT', 3000);
+
+ * FOREIGN KEY(외래키)
+
+ CREATE TABLE emp05(
+   empno NUMBER PRIMARY KEY,
+   ename VARCHAR2(20) NOT NULL,
+   job VARCHAR2(20),
+  deptno NUMBER REFERENCES departments(department_id)
+ )
+
+  INSERT INTO emp05 VALUES(200, 'kim', 'IT', 3000);
+
+ * 테이블 레벨 방식 -> 제약조건 이름을 명시
+
+  CREATE TABLE emp06(
+   empno NUMBER,
+   ename VARCHAR2(20) NOT NULL,
+   job VARCHAR2(20),
+  deptno NUMBER,
+
+  CONSTRAINT emp06_empno_pk PRIMARY KEY(empno),
+  CONSTRAINT emp06_deptno_fk FOREIGN KEY(deptno)
+    REFERENCES departments(department_id)
+ )
+
+ * 테이블 수정 방식
+
+ CREATE TABLE emp07(
+   empno NUMBER,
+   ename VARCHAR2(20),
+   job VARCHAR2(20),
+  deptno NUMBER
+ )
+
+ ALTER TABLE emp07
+  ADD CONSTRAINT emp07_empno_pk PRIMARY KEY(empno);
+
+ ALTER TABLE emp07
+  ADD CONSTRAINT emp07_deptno_fk FOREIGN KEY(deptno)
+  REFERENCES departments(department_id);
+
+ ALTER TABLE emp07
+  MODIFY ename CONSTRAINT emp07_ename_nn NOT NULL;
+
+CREATE TABLE emp08(
+   empno NUMBER,
+   ename VARCHAR2(20),
+   job VARCHAR2(20),
+  deptno NUMBER
+ )
+
+ ALTER TABLE emp08
+  ADD CONSTRAINT emp08_empno_pk PRIMARY KEY(empno)
+  ADD CONSTRAINT emp08_deptno_fk FOREIGN KEY(deptno)
+    REFERENCES departments(department_id)
+  MODIFY ename CONSTRAINT emp08_ename_nn NOT NULL;
+
+ * CHECK 제약조건(의도된 데이터만 입력 가능)
+
+CREATE TABLE emp09(
+   empno NUMBER,
+   ename VARCHAR2(20),
+   job VARCHAR2(20),
+  deptno NUMBER,
+  gender CHAR(1) CHECK(gender IN('M', 'F'))
+ )
+
+ INSERT INTO emp09 VALUES(200, 'kim', 'IT', 30, 'A');
+
+ * DEFAULT 제약조건
+
+ CREATE TABLE emp10(
+   empno NUMBER,
+   ename VARCHAR2(20),
+   job VARCHAR2(20),
+  deptno NUMBER,
+  loc VARCHAR2(20) DEFAULT 'Seoul'
+ )
+
+ INSERT  INTO emp10 (empno, ename, job, deptno)
+   VALUES(100, 'kim', 'IT', 30);
+
+ * 2개 이상 주식별자 설정
+  => 기본키를 구성하는 컬럼이 복수?
+
+ CREATE TABLE 테이블명(  => 오류
+   컬럼1 NUMBER PRIMARY KEY,
+   컬럼2 NUMBER PRIMARY KEY,
+ )
+
+  CREATE TABLE 테이블명( 
+   컬럼1 NUMBER,
+   컬럼2 NUMBER,
+
+   CONSTRAINT 제약조건이름 PRIMARY KEY(컬럼1, 컬럼2)
+ )
+
+  주키 2개일때 차이점
+  100,  kim
+  100,  park
+
+CREATE TABLE emp11(
+   empno NUMBER,
+   ename VARCHAR2(20),
+   job VARCHAR2(20),
+   deptno NUMBER
+ )
+
+ ALTER TABLE emp11
+   ADD CONSTRAINT emp11_empno_ename_pk PRIMARY KEY(empno, ename);
+
+ INSERT INTO emp09 VALUES(100, 'kim', 'IT', 30);
+
+ CREATE TABLE emp12(
+   empno NUMBER,
+   ename VARCHAR2(20),
+   job VARCHAR2(20),
+   deptno NUMBER
+ )
+
+ ALTER TABLE dept01
+  ADD CONSTRAINT dept01_department_id_pk PRIMARY KEY(department_id);
+   
+ ALTER TABLE emp12
+  ADD CONSTRAINT emp12_deptno_fk FOREIGN KEY(deptno)
+     REFERENCES dept01(department_id)
+
+INSERT INTO emp12 VALUES(100, 'kim', 'IT', 30);
+
+DELETE FROM dept01 WHERE department_id = 30;
+=> 삭제X => 30번 부서에 대한 참조 관계
+
+* 제약조건 삭제(해제)
+  
+  해결방법 1) emp12 테이블 데이터중 deptno = 30 값을 삭제 후 가능
+    DELETE FROM emp12 WHERE deptno = 30;
+    DELETE FROM dept01 WHERE department_id = 30;
+
+  해결방법 2) 테이블 생성시 CASCADE 이용
+                  부서테이블의 데이터가 삭제되면 자동으로 참조하는 데이터도 삭제
+
+  CREATE TABLE emp13(
+   empno NUMBER,
+   ename VARCHAR2(20),
+   job VARCHAR2(20),
+   deptno NUMBER REFERENCES dept01(department_id)
+     ON DELETE CASCADE
+ )
+
+INSERT INTO emp13 VALUES(100, 'kim', 'IT', 20);
+DELETE FROM dept01 WHERE department_id = 20;
+
+** 조인 (JOIN)
+  -> 2개 이상의 테이블에서 데이터를 검색하기 위해서
+
+문> 'King'의 부서이름을 출력하시오.
+
+  -> SELECT employee_id, department_id
+        FROM employees
+        WHERE last_name = 'King';
+
+  -> SELECT department_id, department_name 
+        FROM departments
+        WHERE department_id IN(80, 90);
+
+  -> 조인이용 방법
+    1. 내가 원하는 데이터는 무엇인가? (컬럼목록)
+    2. 원하는 데이터가 어느 테이블에 있는가?
+    3. 여러 테이블에 있다면 각각의 테이블의 공통컬럼을 찾는다.
+
+ -> SELECT e.employee_id, e.department_id, d.department_name
+       FROM employees e, departments d
+       WHERE e.department_id = d.department_id
+       AND last_name = 'King';
+
+ 퀴즈 kcc> '송강' 교수가 강의하는 과목을 검색하라.
+      1. 교수번호(pno), 교수이름(pname), 과목명(cname)
+      2. professor, course
+      3. pno
+
+    -> SELECT p.pno, p.pname, c.cname
+          FROM professor p, course c
+          WHERE p.pno = c.pno
+          AND pname= '송강';
+   
+mission kcc>
+ 1. 학점이 2학점인 과목과 이를 강의하는 교수를 검색하라.
+SELECT c.cname, c.st_num, p.pname
+       FROM professor p, course c
+       WHERE p.pno = c.pno
+       AND st_num = 2;
+
+ 2. 화학과 1학년 학생의 기말고사 성적을 검색하라.
+    SELECT s.major, s.syear, s.sname, s1.result
+       FROM student s, score s1
+       WHERE s.sno = s1.sno
+       AND major = '화학'
+       AND syear = 1;
+
+ 3. 화학과 1학년 학생이 수강하는 과목을 검색하라.(3개 테이블 조인)
+    SELECT major, syear, sname, cname
+      FROM student s, course c, score s1
+      WHERE s.sno = s1.sno
+      AND c.cno = s1.cno
+      AND major = '화학'
+      AND syear = 1;
+
+ => ANSI JOIN(SQL-99)
+
+ (이전)  SELECT e.employee_id, e.department_id, d.department_name
+       FROM employees e, departments d
+       WHERE e.department_id = d.department_id
+       AND last_name = 'King';
+
+ (Ansi) SELECT e.employee_id, e.department_id, d.department_name
+            FROM employees e INNER JOIN departments d
+            ON e.department_id = d.department_id
+            WHERE last_name = 'King';
+
+  -3개 이상 조인
+  -> 테이블1 JOIN 테이블2
+      ON 공통컬럼1 = 공통컬럼1
+      JOIN 테이블3
+      ON 공통컬럼1 = 공통컬럼2
+ 
+퀴즈 hr> 3개 이상 테이블을 조인하여 사원이름, 이메일, 부서번호, 부서이름
+             , 직종번호(job_id), 직종이름(job_title) 을 출력해 보자. => (WHERE, ANSI)
+
+ -> SELECT e.last_name, e.email, d.department_id, d.department_name, j.job_id, j.job_title
+        FROM employees e, departments d, jobs j
+        WHERE e.department_id = d.department_id
+        AND e.job_id = j.job_id;
+
+ -> SELECT e.last_name, e.email, d.department_id, d.department_name, j.job_id, j.job_title
+        FROM employees e INNER JOIN departments d
+        ON e.department_id = d.department_id
+        INNER JOIN jobs j
+        ON e.job_id = j.job_id;
+
+ 퀴즈 hr> 'Seattle' (city)에 근무하는 사원이름, 부서번호, 직종번호, 직종이름, 도시이름 
+	출력해보자. => (WHERE, ANSI)
+
+SELECT e.last_name, d.department_id, j.job_id, j.job_title, l.city
+	FROM employees e, departments d, jobs j, locations l
+	WHERE e.department_id = d.department_id
+	AND e.job_id = j.job_id
+	AND d.location_id = l.location_id
+	AND l.city = 'Seattle';
+
+ SELECT e.last_name, d.department_id, j.job_id, j.job_title, l.city
+	FROM employees e JOIN departments d
+	ON e.department_id = d.department_id
+	JOIN jobs j
+	ON e.job_id = j.job_id
+	JOIN locations l
+	ON d.location_id = l.location_id
+	WHERE l.city = 'Seattle';
+
+ * Self JOIN
+  -> 물리적 테이블1개 => 논리적 테이블 2개로 표현
+  => 'Kochhar' 직속상사의 정보 출력하라.
+  SELECT A.last_name || '의 매니저는 '|| B.last_name || ' 이다.'
+    FROM employees A, employees B
+    WHERE A.manager_id = B.employee_id
+    AND A.last_name = 'Kochhar';
+
+퀴즈 kcc> 학생 중에 동명이인을 검색하라. => DISTINCT
+  -> SELECT DISTINCT A.sno, A.sname
+        FROM student A, student B
+        WHERE A.sname = B.sname
+        AND A.sno != B.sno;
+
+* OUTER JOIN(외부조인)
+
+ SELECT * FROM employees;  => 107row
+
+ (Inner Join)  => 106row
+ SELECT e.employee_id, d.department_id, d.department_name
+   FROM employees e, departments d
+   WHERE e.department_id = d.department_id;
+
+ (Outer JOIN)
+ SELECT e.employee_id, d.department_id, d.department_name
+   FROM employees e, departments d
+   WHERE e.department_id = d.department_id(+);
+
+ (ANSI JOIN)
+ SELECT e.employee_id, d.department_id, d.department_name
+   FROM employees e LEFT JOIN  departments d
+   ON e.department_id = d.department_id;
+
+퀴즈 kcc>등록된 과목에 대한 모든 교수를 검색하라.
+             => 등록하지 않은 교수도 출력
+
+ SELECT * FROM professor; 36row
+
+ - INNER JOIN => 29row
+ SELECT c.cno, c.cname, p.pname, c.st_num
+   FROM course c, professor p
+   WHERE c.pno = p.pno;
+
+ - OUTER JOIN
+ SELECT c.cno, c.cname, p.pname, c.st_num
+   FROM course c, professor p
+   WHERE c.pno(+) = p.pno;
+
+ - ANSI JOIN
+  SELECT c.cno, c.cname, p.pname, c.st_num
+   FROM course c RIGHT JOIN professor p
+   ON c.pno = p.pno;
+
+ SELECT c.cno, c.cname, p.pname, c.st_num
+   FROM course c FULL JOIN professor p
+   ON c.pno = p.pno;
+
+ SELECT ename, sal, grade
+  FROM emp, salgrade
+  WHERE sal BETWEEN losal AND hisal
+  ORDER BY grade;
+
+ SELECT sname, cname, result, grade
+   FROM student s, score s2, course c, scgrade g
+   WHERE s.sno = s2.sno
+   AND c.cno = s2.cno
+   AND result BETWEEN hiscore AND loscore
+
+SELECT grade 
+   FROM student s, course c, score r, scgrade g
+   WHERE s.sno = r.sno
+   AND c.cno = r.cno
+  AND result BETWEEN loscore AND hiscore
+
+
+
+
+
+
+
+
+

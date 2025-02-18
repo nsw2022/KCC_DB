@@ -1,0 +1,372 @@
+** 4일 수업 **
+
+* 서브쿼리 (하위 질의문)
+ - WHERE, HAVING => 하위 질의문
+ - FROM 절 하위질의문 => n-tier : table 대체
+
+ 문> 사원의 평균급여 보다 많이 받는 사원의 내역을 출력하라.  
+
+  -> SELECT AVG(salary) FROM employees
+  => 6461.831775700934579439252336448598130841
+
+  -> SELECT last_name, salary
+        FROM employees
+        WHERE salary > 6461.831775700934579439252336448598130841;
+
+  -> SELECT last_name, salary
+        FROM employees
+        WHERE salary > (SELECT AVG(salary) FROM employees);
+
+  - 서브쿼리 작성 순서
+   1. 서브쿼리문 작성 => 결과값 확인 => 메인 쿼리문 구성 영향
+   2. 메인쿼리문 작성
+
+ 퀴즈 hr> 'Chen' 사원 보다 salary를 많이 받는 사원 목록을 출력하라.
+  SELECT salary FROM employees
+   WHERE last_name = 'Chen'
+
+  SELECT last_name, salary
+    FROM employees
+    WHERE salary > (SELECT salary FROM employees
+  		   WHERE last_name = 'Chen')
+
+<mission kcc>
+1. '정의찬'과 부서(dept)가 다르지만 동일한 업무(job)을 수행하는 
+   사원 목록을 출력하라.
+
+  SELECT dno FROM emp
+   WHERE ename = '정의찬'
+
+  SELECT job FROM emp
+   WHERE ename = '정의찬'
+
+  SELECT eno, ename, dno, job FROM emp
+    WHERE dno != (SELECT dno FROM emp
+  		 WHERE ename = '정의찬')
+    AND job = (SELECT job FROM emp
+  		 WHERE ename = '정의찬')
+
+2. '관우' 보다 일반화학과목의 학점이 낮은 학생의 명단을 출력하라.
+
+  SELECT grade FROM student s, course c, score r, scgrade g
+   WHERE s.sno = r.sno
+   AND c.cno = r.cno
+   AND cname = '일반화학'
+   AND sname = '관우'
+   AND result BETWEEN loscore AND hiscore
+
+
+ SELECT s.sno, sname, grade
+   FROM student s, course c, score r, scgrade g
+   WHERE s.sno = r.sno
+  AND c.cno = r.cno
+  AND cname = '일반화학' 
+  AND result BETWEEN loscore AND hiscore
+  AND grade > (SELECT grade FROM student s, course c, score r, scgrade g
+  		WHERE s.sno = r.sno
+   		AND c.cno = r.cno
+   		AND cname = '일반화학'
+   		AND sname = '관우'
+   		AND result BETWEEN loscore AND hiscore)
+
+
+ * HAVING절 서브쿼리
+
+문> 부서 중에 평균급여를 가장 많이 받는 부서를 검색하라.
+
+  SELECT MAX(AVG(sal)) FROM emp
+   GROUP BY dno
+
+  SELECT dno FROM emp
+   GROUP BY dno
+   HAVING AVG(sal) = (SELECT MAX(AVG(sal)) FROM emp
+   			GROUP BY dno);
+
+퀴즈 kcc> 학생 인원수가 가장 많은 학과를 출력하자.
+   SELECT MAX(COUNT(*)) FROM student
+     GROUP BY major
+
+  SELECT major FROM student
+    GROUP BY major
+    HAVING COUNT(*) = (SELECT MAX(COUNT(*)) FROM student
+    			 GROUP BY major)
+  
+<mission kcc>
+1. 학생중 기말고사 평균성적이 가장 낮은 학생의 정보를 검색하라.
+  SELECT MIN(AVG(result)) FROM score
+    GROUP BY sno
+
+  SELECT s.sno, sname
+    FROM student s, score r
+    WHERE s.sno = r.sno
+    GROUP BY s.sno, sname
+    HAVING AVG(result) = (SELECT MIN(AVG(result)) FROM score
+    			GROUP BY sno)
+
+
+
+2. 화학과 1학년 학생중에 평점이 평균이하인 학생을 검색하라.
+
+   SELECT AVG(avr) FROM student
+     WHERE major = '화학'
+     AND syear = 1
+
+   SELECT * FROM student
+    WHERE major = '화학'
+    AND syear = 1
+    AND avr < (SELECT AVG(avr) FROM student
+    		 WHERE major = '화학'
+     		AND syear = 1)
+
+* 다중컬럼 다중로우
+
+ 문> 직무(job_id)별 최대급여자의 사원내용을 출력하라.
+
+ SELECT MAX(salary) FROM employees
+  GROUP BY job_id
+
+ SELECT employee_id, last_name, salary, job_id
+   FROM employees
+   WHERE salary = (SELECT MAX(salary) FROM employees
+  			GROUP BY job_id)
+
+ => 다중 로우 처리
+ SELECT employee_id, last_name, salary, job_id
+   FROM employees
+   WHERE salary IN (SELECT MAX(salary) FROM employees
+  			GROUP BY job_id)
+
+ => 다중 컬럼 처리
+ SELECT employee_id, last_name, salary, job_id
+   FROM employees
+   WHERE (salary, job_id) IN (SELECT MAX(salary), job_id FROM employees
+  			GROUP BY job_id)
+ 
+
+ IN : 검색된 값 중에 하나만 일치하면 참
+ ANY : 검색된 값 중에 조건에 맞는 것이 하나 이상이면 참
+ ALL : 검색된 값 중에 모두 일치해야 참
+
+ * 컬럼 > max() => 컬럼 > ALL(서브쿼리) : 가장 큰 값 보다 크다.
+ * 컬럼 < min() => 컬럼 < ALL(서브쿼리) : 가장 작은 값 보다 작다.
+
+ * 컬럼 > min() => 컬럼 > ANY(서브쿼리) : 가장 작은값 보다 크다.
+ * 컬럼 < max() => 컬럼 < ANY(서브쿼리) : 가장 큰값 보다 작다.
+
+문> 10번 부서에서 가장 작은 급여자 보다 작게 받는 급여자를 출력하라.
+  
+  SELECT MIN(sal) FROM emp
+    WHERE dno = 10
+
+  SELECT eno, ename, sal, dno
+    FROM emp
+    WHERE sal < (SELECT MIN(sal) FROM emp
+   		WHERE dno = 10)
+
+  SELECT eno, ename, sal, dno
+    FROM emp
+    WHERE sal < ALL (SELECT sal FROM emp
+   		WHERE dno = 10)
+
+<mission kcc>
+1. 부서번호 30번 최대급여자 보다 급여가 높은 사원을 출력하라.
+SELECT * FROM employees
+	WHERE salary > ALL (SELECT salary FROM employees
+			WHERE department_id = 30)
+
+2. 부서번호 30번 최대급여자 보다 급여가 작은 사원을 출력하라.
+ SELECT * FROM employees
+	WHERE salary < ANY (SELECT salary FROM employees
+			WHERE department_id = 30) 
+
+<mission kcc>
+1. '손하늘'과 동일한 관리자(mgr)의 관리를 받으면서 업무도 같은 사원을 검색하라.
+SELECT mgr, job FROM emp
+	WHERE ename = '손하늘'
+
+  SELECT eno, ename, mgr, job FROM emp
+	WHERE (mgr, job) IN (SELECT mgr, job FROM emp
+				WHERE ename = '손하늘')
+ 
+
+2. 화학과 학생과 평점이 동일한 학생을 검색하라.
+  SELECT avr FROM student
+	WHERE major = '화학'
+
+  SELECT sno, sname, major, avr FROM student
+	WHERE avr IN (SELECT avr FROM student
+			WHERE major = '화학')
+
+ 
+3. 화학과 학생과 같은 학년에서 평점이 동일한 학생을 검색하라.
+  SELECT syear, avr FROM student
+	WHERE major = '화학'
+  
+  SELECT sno, sname, major, avr, syear FROM student
+	WHERE (syear, avr) IN (SELECT syear, avr FROM student
+				WHERE major = '화학')
+
+4. 기말고사 평균성적이 '핵화학' 과목 평균 성적보다 우수한 과목번호, 과목명, 
+	담당교수 검색하라.
+SELECT cno FROM course
+	WHERE cname = '핵화학'
+
+  SELECT AVG(result) FROM score
+	WHERE cno = (SELECT cno FROM course
+			WHERE cname = '핵화학')
+
+  SELECT c.cno, c.cname, p.pname, AVG(result)
+	FROM score r, professor p, course c
+	WHERE r.cno = c.cno
+	AND p.pno = c.pno
+	GROUP BY c.cno, c.cname, p.pname
+	HAVING AVG(result) > (SELECT AVG(result) FROM score
+				WHERE cno = (SELECT cno FROM course
+						WHERE cna
+
+ * FROM절 서브쿼리(n-tier)
+
+문> 입사순서 오래된 5명 출력하라.
+
+  SELECT employee_id, last_name, hire_date
+    FROM employees
+    ORDER BY hire_date
+
+  SELECT ROWNUM, alias.*
+    FROM (SELECT employee_id, last_name, hire_date
+   		FROM employees
+   		 ORDER BY hire_date) alias
+    WHERE ROWNUM <=5;
+
+퀴즈 hr>급여를 많이 받는 사원 3명을 출력하여라.
+
+   SELECT employee_id, last_name, salary
+     FROM employees
+     ORDER BY salary DESC
+
+  SELECT ROWNUM, alias.*
+    FROM (SELECT employee_id, last_name, salary
+     		FROM employees
+     		ORDER BY salary DESC) alias
+    WHERE ROWNUM <= 3
+
+ * ROWNUM
+    => 쿼리를 통해 가져온 데이터를 이용해서 번호를 매기는 방식
+    => 주의사항 : 반드시 1번을 포함해야 한다.
+
+  CREATE TABLE board(
+   seq NUMBER,
+   title VARCHAR2(50),
+   writer VARCHAR2(50),
+   contents VARCHAR2(200),
+   regdate DATE,
+   hitcount NUMBER
+  )
+
+  INSERT INTO board VALUES(1, 'a1', 'a', 'a', sysdate, 0);
+  INSERT INTO board VALUES(2, 'a2', 'a', 'a', sysdate, 0);
+  INSERT INTO board VALUES(3, 'a3', 'a', 'a', sysdate, 0);
+  INSERT INTO board VALUES(4, 'a4', 'a', 'a', sysdate, 0);
+  INSERT INTO board VALUES(5, 'a5', 'a', 'a', sysdate, 0);
+  INSERT INTO board VALUES(6, 'a6', 'a', 'a', sysdate, 0);
+  INSERT INTO board VALUES(7, 'a7', 'a', 'a', sysdate, 0);
+  INSERT INTO board VALUES(8, 'a8', 'a', 'a', sysdate, 0);
+  INSERT INTO board VALUES(9, 'a9', 'a', 'a', sysdate, 0);
+  INSERT INTO board VALUES(10, 'a10', 'a', 'a', sysdate, 0);
+
+문> SELECT FROM board
+         ORDER BY seq DESC
+
+  SELECT ROWNUM, temp.*
+     FROM (SELECT * FROM board
+                  ORDER BY seq DESC)temp
+     WHERE ROWNUM BETWEEN 6 AND 10;
+
+ SELECT ROWNUM AS ROW_NUM, temp.*
+     FROM (SELECT * FROM board
+                  ORDER BY seq DESC)temp
+
+ SELECT * FROM (
+    SELECT ROWNUM AS ROW_NUM, temp.*
+    FROM (SELECT * FROM board
+                  ORDER BY seq DESC)temp
+    )
+    WHERE ROW_NUM BETWEEN 6 AND 10; 
+
+* Transaction(트랜잭션) 
+ -> 전체 일처리가 완결 되어야만 의미가 있는 경우, 부분성공 => 최악
+ -> 전체성공 : commit, 실패: rollback(전체작업 취소)
+ -> DML(insert, update, delete) 대상
+ -> 주문 => 주문등록, 재고수량 수정, 결재등록, 배송등록
+
+ try{
+   1. 계좌출금(본인)
+   2. 계좌입금(상대)
+   commit()
+ }catch(Excetpion e){
+   rollback()
+ }
+
+* 인덱스(Index)
+
+ - 오라클 실행 과정
+  1. SQL 파싱 : SQL 구문에 오류가 있는지, SQL 실행 대상(테이블, 뷰) 존재여부 검사
+  2. SQL 최적화(실행계획) : SQL이 실행하는데 필요한 비용(cost) 계산
+  3. SQL 실행 : 세워진 실행 계획을 통해 물리적 실행
+
+ - 인덱스를 사용하기 전
+ -> 검색 성능이 대용량 데이터에 있어서 현저하게 느림(full scan)
+ -> 검색 속도가 일정하게 보장X
+
+ - 인덱스를 생성
+ -> 해당 컬럼에 대한 Indexing 으로 ROWID 생성 된다.
+ -> 인덱스로된 컬럼값과 ROWID로 구성된 LEAF BLOCKS,
+      그 포인터를 갖는 BRANCH BLOCKS으로 나뉜다.
+ -> B*Tree 구조로 Balance를 유지한다.
+
+ - 오라클에서 인덱스 생성
+  -> PRIMARY KEY, UNIQUE 갖는 컬럼은 기본적으로 인덱스가 자동으로 생성된다.
+  -> CREATE INDEX 인덱스명
+
+ CREATE SEQUENCE board_seq;
+
+ INSERT INTO board VALUES(board_seq.nextval, 'a1', 'a', 'a', sysdate, 0);
+
+ INSERT INTO board(seq, title, writer, contents, regdate, hitcount)
+  (select board_seq.nextval, title, writer, contents, regdate, hitcount from board)
+
+ SELECT * FROM board
+   WHERE seq = 19999;
+
+ ALTER TABLE board
+   ADD CONSTRAINT board_seq_pk PRIMARY KEY(seq);
+
+퀴즈 kcc>board 테이블 'title' 컬럼에 대한 글번호(seq) 100000번에 대해서 
+            'title' 값을 'a100000' 수정하고
+             'a100000' 검색 후 실행 계획을 확인 => full scan
+             인덱스 생성하고 다시 검색 후 => index scan
+
+ UPDATE board SET title = 'a100000'
+   WHERE seq = 100000;
+
+ SELECT * FROM board 
+   WHERE title = 'a100000';
+
+ CREATE INDEX board_title_idx
+   ON board(title);
+
+ 인덱스 결론
+  - 빠른 검색 성능 보장(cost 비용 절감) : 항상X
+  - 일정한 검색 속도 보장(유지) => B-tree 구조
+
+
+
+select file_id tablespace_name, file_name from dba_data_files;
+==> C:\ORACLEXE\APP\ORACLE\ORADATA\XE\SYSTEM.DBF
+
+alter database datafile 'DBF파일 경로\파일명.DBF' resize 2000M(원하는사이즈);
+
+
+
+
+  

@@ -1,0 +1,486 @@
+** 5일 수업 내용 **
+
+** PL/SQL
+  - set serveroutput on;
+  - DBMS_OUTPUT.PUT_LINE();
+
+DECLARE
+--변수 선언
+  v_no NUMBER := 10;
+  v_hireDate VARCHAR2(30) := TO_CHAR(SYSDATE, 'YYYY/MM/DD');
+--상수 선언
+  c_message CONSTANT VARCHAR2(50) := 'Hello PL/SQL!!!';
+
+BEGIN
+  DBMS_OUTPUT.PUT_LINE('PL/SQL 수업');
+  DBMS_OUTPUT.PUT_LINE(c_message);
+  DBMS_OUTPUT.PUT_LINE(v_hireDate);
+
+END;
+
+문> employees 테이블의 로우를 검색하여 변수에 할당해 보자.
+
+DECLARE
+  v_name VARCHAR2(20);
+  v_salary NUMBER;
+  v_hireDate VARCHAR2(30);
+
+BEGIN
+  SELECT first_name, salary, TO_CHAR(SYSDATE, 'YYYY-MM-DD')
+    INTO v_name, v_salary, v_hireDate
+    FROM employees
+    WHERE first_name = 'Ellen';
+
+  DBMS_OUTPUT.PUT_LINE('검색된 사원의 정보');
+  DBMS_OUTPUT.PUT_LINE(v_name ||'  '|| v_salary ||'   '|| v_hireDate);
+
+END;
+
+퀴즈hr> 사원번호 100번에 해당하는 사원의 이름과 부서명을 출력하시오.
+
+DECLARE
+ v_emp_name VARCHAR2(50);
+ v_dept_name VARCHAR2(50);
+
+BEGIN
+ 
+ SELECT last_name, department_name
+	INTO v_emp_name, v_dept_name
+	FROM employees e, departments d
+	WHERE e.department_id = d.department_id
+	AND employee_id = 100;
+ 
+dbms_output.put_line(v_emp_name || '     ' ||v_dept_name);
+
+END;
+
+* 데이터 유형(기본형, 레퍼런스형)
+
+DECLARE
+  --기본형 데이터형
+  v_search VARCHAR2(30) := 'Lisa';
+  --레퍼런스형 
+  v_name employees.last_name%TYPE;
+  v_salary employees.salary%TYPE;
+
+BEGIN
+  SELECT last_name, salary
+    INTO v_name, v_salary
+    FROM employees
+    WHERE first_name = v_search;
+
+  DBMS_OUTPUT.PUT_LINE(v_name ||'  '|| v_salary);
+
+END;
+
+<과제 hr>
+1. 사원테이블에서 201번 사원의 이름과 이메일을 출력하라.(레퍼런스형)
+DECLARE
+     v_employees_name employees.last_name%TYPE;
+     v_employees_email employees.email%TYPE;
+
+BEGIN
+   SELECT last_name, email
+	INTO v_employees_name, v_employees_email
+	FROM employees
+	WHERE employee_id = 201;
+
+   dbms_output.put_line(v_employees_name ||'     '||v_employees_email);
+
+2. employees => employees2 복사
+    사원테이블에서 사원번호가 가장 큰 사원을 찾은후 사원번호+1번으로
+     아래의 사원을 추가하라.
+
+    사원명 : Hong gil dong
+    이메일 :  aa@aa.com
+    입사일자 : sysdate
+    job_id : AD_VP
+
+CREATE TABLE employees2
+	AS SELECT * FROM employees;
+
+DECLARE
+  v_max_id employees2.employee_id%TYPE;
+
+BEGIN
+  SELECT max(employee_id)
+	INTO v_max_id
+	FROM employees2;
+
+  INSERT INTO employees2(employee_id, last_name, email, hire_date,
+	 job_id) VALUES(v_max_id +1, 'Hong gil dong', 
+		'aa@aa.com', sysdate, ' AD_VP');
+
+  COMMIT;
+END;
+
+ * ROWTYPE -> 1개의 로우타입을 갖는다.
+
+DECLARE
+  employee_record employees%ROWTYPE;
+  v_department_name departments.department_name%TYPE;
+
+BEGIN
+  SELECT * INTO employee_record
+    FROM employees
+    WHERE first_name = 'Lisa';
+
+   dbms_output.put_line(employee_record.employee_id ||'  '||
+      employee_record.first_name ||'   '|| employee_record.salary);
+
+END;
+
+퀴즈scott>40번 부서의 부서정보를 ROWTYPE을 이용해서 출력하자.
+               (deptno, dname, loc)
+
+DECLARE
+   V_DEPT_ROW DEPT%ROWTYPE;
+BEGIN
+   SELECT DEPTNO, DNAME, LOC INTO V_DEPT_ROW
+     FROM DEPT
+    WHERE DEPTNO = 40;
+   DBMS_OUTPUT.PUT_LINE('DEPTNO : ' || V_DEPT_ROW.DEPTNO);
+   DBMS_OUTPUT.PUT_LINE('DNAME : ' || V_DEPT_ROW.DNAME);
+   DBMS_OUTPUT.PUT_LINE('LOC : ' || V_DEPT_ROW.LOC);
+END;
+
+ * 제어문(조건문
+
+DECLARE
+  v_no NUMBER :=7;
+  v_score NUMBER := 80;
+
+BEGIN
+  --단수
+  /*IF v_no = 7 THEN
+    DBMS_OUTPUT.PUT_LINE('7이다');
+  END IF;*/
+  --IF ~ ELSE ~ END IF
+ /* IF v_no = 5 THEN
+    DBMS_OUTPUT.PUT_LINE('5이다');
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('5가 아니다');
+  END IF;*/
+  -- IF ~ ELSIF ~ END IF
+  IF v_score >= 90 THEN
+    DBMS_OUTPUT.PUT_LINE('A학점');
+  ELSIF v_score >= 80 THEN
+    DBMS_OUTPUT.PUT_LINE('B학점');
+  ELSIF v_score >= 70 THEN
+    DBMS_OUTPUT.PUT_LINE('C학점');
+  ELSE
+    DBMS_OUTPUT.PUT_LINE('F학점');
+  END IF;
+
+END;
+
+퀴즈hr> 난수구하기 => ROUND(DBMS_RANDOM.VALUE(10, 120), -1)
+         10 ~ 120 사이에 임의의 부서번호를 받아서 해당 부서의 평균 급여에 따라서
+         등급이 출력되도록 하자.
+         1 ~ 3000 : 낮음
+         3000 ~ 6000 : 보통
+         6000 이상 : 높음
+
+ BEGIN
+   v_department_id :=  ROUND(DBMS_RANDOM.VALUE(10, 120), -1); 
+   
+   SELECT AVG(salary) INTO v_salary
+	FROM employees
+	GROUP BY department_id
+	HAVING department_id = v_department_id;
+
+  /*IF v_salary BETWEEN 1 AND 3000 THEN
+	dbms_output.put_line('낮음');
+  ELSIF v_salary BETWEEN 3000 AND 6000 THEN
+	dbms_output.put_line('보통');
+  ELSE
+	dbms_output.put_line('높음');
+  END IF;*/
+
+  CASE WHEN v_salary BETWEEN 1 AND 3000 THEN
+	dbms_output.put_line('낮음');
+  WHEN v_salary BETWEEN 3000 AND 6000 THEN
+	dbms_output.put_line('보통');
+  ELSE
+	dbms_output.put_line('높음');
+  END CASE;
+
+END;
+
+ * 반복문(LOOP, WHILE, FOR)
+
+DECLARE
+  i NUMBER := 0;
+  total NUMBER := 0;
+
+BEGIN
+  LOOP
+   i := i+1;
+   total := total + i;
+   --조건
+   EXIT WHEN i >= 10;
+  END LOOP; 
+
+   DBMS_OUTPUT.PUT_LINE(total);
+END;
+
+ * WHILE
+
+DECLARE
+  i NUMBER := 0;
+  total NUMBER := 0;
+
+BEGIN
+  WHILE i <= 10 LOOP
+    total := total + i;
+    i := i + 1;
+  END LOOP;
+  
+   DBMS_OUTPUT.PUT_LINE(total);
+END;
+
+* FOR문
+
+DECLARE
+  i NUMBER := 0;
+  total NUMBER := 0;
+
+BEGIN
+  FOR i IN 1..10 LOOP
+    total := total + i;
+  END LOOP;
+
+  DBMS_OUTPUT.PUT_LINE(total);
+END;
+
+과제> LOOP  => 구구단 3단 => 3 * 1 = 3 
+         FOR => 구구단 전체
+
+DECLARE
+  v_base NUMBER :=3;
+  v_cnt NUMBER :=1;
+
+BEGIN
+	LOOP
+		dbms_output.put_line(v_base || ' * ' || v_cnt 
+			|| ' = ' || v_base * v_cnt);
+		v_cnt := v_cnt +1;
+		--조건
+		EXIT WHEN v_cnt >9;	
+	END LOOP;
+END;
+
+-----------------------------------
+
+BEGIN
+ --구구단 출력
+  FOR i IN 2..9 LOOP
+	FOR j IN 1..9 LOOP
+ 	dbms_output.put_line(i ||'*'|| j ||' = ' || i * j);
+	END LOOP;
+	dbms_output.put_line('');
+  END LOOP;
+END;
+
+
+* 예외(Exception)
+ - PL/SQL 오류를 예외라고 한다.
+ - 컴파일시 문법적 오류, 실행시 발생하는 오류
+ - 미리 정의된 오라클 서버예외 : 선언할 필요 없고, 발생시 예외절오 자동 이동 => 예외처리
+ - 사용자 예외를 강제로 발생 : 선언부에서 예외정의, 실행부에서 RAISE문 사용
+
+DECLARE
+  employee_record employees%ROWTYPE;
+
+BEGIN
+  SELECT employee_id, last_name, department_id
+    INTO employee_record.employee_id,
+	employee_record.last_name,
+	employee_record.department_id
+    FROM employees
+    WHERE department_id = 50;
+
+ EXCEPTION
+  --UNIQUE 제약조건을 갖는 컬럼에 중복된 데이터 insert
+  WHEN DUP_VAL_ON_INDEX THEN
+    dbms_output.put_line('이미 존재하는 사원 입니다.');
+  --select문 결과 2개 이상의 로우를 반환
+  WHEN TOO_MANY_ROWS THEN
+    dbms_output.put_line('검색된 로우가 많습니다.');
+  --데이터가 없을 때
+  WHEN NO_DATA_FOUND THEN
+    dbms_output.put_line('검색된 사원이 없습니다.');
+  --그밖에 예외 사유
+  WHEN OTHERS  THEN
+    dbms_output.put_line('기타 예외');
+
+END;
+
+ -- 사용자가 강제로 예외 발생 => 예외 정의
+
+DECLARE
+  e_user_exception EXCEPTION; --사용자 예외 정의
+  cnt NUMBER := 0;
+
+BEGIN
+  SELECT COUNT(*) INTO cnt
+    FROM employees
+    WHERE department_id = 40;
+
+  IF cnt < 5 THEN
+    RAISE e_user_exception; -- 인원적으로 예외 발생
+  END IF;
+
+ EXCEPTION
+   WHEN e_user_exception THEN
+     dbms_output.put_line('5명 이하 부서 금지');
+
+END; 
+
+퀴즈hr>신입사원을 입력시 잘못된 부서번호에 대해서 사용자 예외처리 하세요.
+           => employees2 테이블 활용
+           => 부서번호 50000번 입력 => 사용자 정의 예외 발생
+           => employee_id, last_name, email, hire_date, job_id, department_id
+                                                           SYSDATE, 'AD_VP'
+
+DECLARE
+  p_department_id NUMBER := 50000;
+  ex_invalid_deptid EXCEPTION;
+  v_cnt NUMBER := 0;
+  v_employee_id employees2.employee_id%TYPE;
+
+BEGIN
+ SELECT COUNT(*) INTO v_cnt
+    FROM employees2
+    WHERE department_id = p_department_id;
+
+ IF v_cnt = 0 THEN
+   RAISE ex_invalid_deptid;
+ END IF;
+
+ SELECT MAX(employee_id) + 1
+   INTO v_employee_id
+   FROM employees2;
+
+ INSERT INTO employees2(employee_id, last_name, email, hire_date, job_id, department_id)
+  VALUES(v_employee_id, 'aa', 'aa@aa.com', SYSDATE, 'AD_VP', p_department_id);
+
+EXCEPTION
+ WHEN ex_invalid_deptid THEN
+   dbms_output.put_line('해당 부서가 없습니다.');
+ WHEN OTHERS THEN
+   dbms_output.put_line('기타 예외');
+
+END;
+
+* 데이터타입
+ 1. 기본형 : NUMBER, VARCHAR2
+ 2. 레퍼런스형: employees.employee_id%TYPE
+ 3. 로우타입 :  employee_record employees%ROWTYPE;
+
+ * 커서(CURSOR)
+  - 질의 결과가 다중로우일 경우 반드시 커서를 이용
+
+DECLARE
+  --커서 선언
+  CURSOR department_cursors IS
+    SELECT department_id, department_name, location_id
+      FROM departments;
+  
+  department_record department_cursors%ROWTYPE;
+
+BEGIN
+  --커서 열기
+  OPEN department_cursors;
+
+  LOOP
+    FETCH department_cursors
+      INTO department_record.department_id,
+	department_record.department_name,
+	department_record.location_id;
+    EXIT WHEN department_cursors%NOTFOUND;
+
+     dbms_output.put_line(department_record.department_id ||'  '||
+		department_record.department_name ||'   '||
+		department_record.location_id);
+  END LOOP;
+  CLOSE department_cursors;
+END;
+
+---FOR...IN
+
+DECLARE
+  --커서 선언
+  CURSOR department_cursors IS
+    SELECT department_id, department_name, location_id
+      FROM departments;
+  
+  department_record department_cursors%ROWTYPE;
+
+BEGIN
+  FOR department_record IN department_cursors LOOP
+      dbms_output.put_line(department_record.department_id ||'  '||
+      department_record.department_name ||'   '||
+      department_record.location_id);
+  END LOOP;
+
+END;
+
+퀴즈hr>커서를 이용하여 사원의정보를 출력하라.
+           (사원번호, 사원이름(first_name), 급여, 급여누계)
+
+DECLARE
+   CURSOR employee_cursors IS
+	SELECT employee_id, first_name, salary
+		FROM employees;
+   employee_record employee_cursors%ROWTYPE;
+   v_totalsalary NUMBER := 0;
+
+BEGIN
+OPEN employee_cursors;
+
+   dbms_output.put_line('==========================');
+   dbms_output.put_line('사원번호,    사원이름,    급여,    급여누계');   
+   dbms_output.put_line('==========================');
+
+  LOOP
+	FETCH employee_cursors INTO employee_record;
+	EXIT WHEN employee_cursors %NOTFOUND;
+
+	v_totalsalary := v_totalsalary + employee_record.salary;
+	dbms_output.put_line(employee_record.employee_id
+	||',    '|| employee_record.first_name||',    '||
+	employee_record.salary||',    '|| v_totalsalary);
+  END LOOP;
+
+dbms_output.put_line(employee_cursors%rowcount||'행이 검색');
+ CLOSE employee_cursors;
+
+END;
+
+ -- FOR..IN
+
+DECLARE
+   CURSOR employee_cursors IS
+	SELECT employee_id, first_name, salary
+		FROM employees;
+   employee_record employee_cursors%ROWTYPE;
+   v_totalsalary NUMBER := 0;
+
+BEGIN
+  dbms_output.put_line('==========================');
+  dbms_output.put_line('사원번호,    사원이름,    급여,    급여누계');   
+  dbms_output.put_line('==========================');
+
+  FOR employee_record IN employee_cursors LOOP
+     v_totalsalary := v_totalsalary + employee_record.salary;
+     dbms_output.put_line(employee_record.employee_id
+		||',    '|| employee_record.first_name||',    '||
+		employee_record.salary||',    '|| v_totalsalary);
+  END LOOP;
+
+END;
+
+
+
+  
